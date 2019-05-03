@@ -1,4 +1,4 @@
-# delirium
+# Delirium
 
 # Using a large-scale EHR record to predict delirious patients in ICU units: an evidence-based machine learning approach
 
