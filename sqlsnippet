@@ -1,0 +1,223 @@
+# The dataset was extensive,  and it was challenging to query the desired result with a single SQL input. 
+# Therefore, the query was split into many small subqueries and then join the results together using the R language. 
+
+
+select ccs.ccs_id,dd.icd9_code
+from diagnoses_icd  dd
+inner join ccs_single_level_dx ccs on ccs.icd9_code=dd.icd9_code
+group by ccs.ccs_id,dd.icd9_code
+order by 1,2 asc
+
+#####comatose####
+
+SELECT DISTINCT hadm_id FROM chartevents
+WHERE itemid= 228096 and hadm_id NOT IN 
+ (   
+		SELECT distinct hadm_id
+		FROM chartevents
+    WHERE itemid=228096 AND valuenum > -4  ##itemid 228096 RASS score
+		
+	)	
+	AND icustay_id IS NOT NULL
+	
+UNION
+
+SELECT DISTINCT hadm_id FROM chartevents
+WHERE itemid = 198 and hadm_id NOT IN 
+(
+		SELECT distinct hadm_id
+		FROM  chartevents
+    WHERE  itemid=198 AND valuenum > 8   ###itemid 198 GCS score
+)
+AND icustay_id IS NOT NULL
+ORDER BY 1
+
+#### 1115 hits####
+
+
+####general part 49608 hits incl. comatose patient###########
+
+
+select distinct dd.hadm_id,
+round((cast(ad.admittime as date) - cast(pt.dob as date)) / 365.2 ) as Age, pt.Gender, round(sum(icu.LOS))AS LOS, ccs.ccs_id,dd.icd9_code
+from diagnoses_icd  dd
+inner join admissions ad on ad.hadm_id=dd.hadm_id
+inner join ccs_single_level_dx ccs on ccs.icd9_code=dd.icd9_code
+inner join patients pt on pt.subject_id=dd.subject_id
+inner join icustays icu on icu.hadm_id=dd.hadm_id
+where dd.seq_num=1 and round((cast(ad.admittime as date) - cast(pt.dob as date)) / 365.2 )>0
+group by dd.hadm_id,ccs.ccs_id,dd.icd9_code,age, gender
+order by 1
+
+
+###measurements 57085 hits####
+
+
+select distinct hadm_id
+    , min(case when itemid in (615,618,220210,224690) and valuenum > 0 and valuenum < 70 then valuenum else null end) as RespRate_Min
+    , max(case when itemid in (615,618,220210,224690) and valuenum > 0 and valuenum < 70 then valuenum else null end) as RespRate_Max
+    , round(cast(avg(case when itemid in (615,618,220210,224690) and valuenum > 0 and valuenum < 70 then valuenum else null end)as numeric),1) as RespRate_Mean
+    , min(case when itemid in (807,811,1529,3745,3744,225664,220621,226537) and valuenum > 0 and valuenum < 2700 then valuenum else null end) as Glucose_Min
+    , max(case when itemid in (807,811,1529,3745,3744,225664,220621,226537) and valuenum > 0 and valuenum < 2700 then valuenum else null end) as Glucose_Max
+    , round(cast(avg(case when itemid in (807,811,1529,3745,3744,225664,220621,226537) and valuenum > 0 and valuenum < 2700 then valuenum else null end)as numeric),1) as Glucose_Mean
+    , min(case when itemid in (211,220045) and valuenum > 0 and valuenum < 100 then valuenum else null end) as HR_min
+    , max(case when itemid in (211,220045) and valuenum > 0 and valuenum < 100 then valuenum else null end) as HR_max
+    , round(cast(avg(case when itemid in (211,220045) and valuenum > 0 and valuenum < 100 then valuenum else null end) as numeric)) as HR_mean
+    , min(case when itemid in (455,220179) and valuenum > 0 and valuenum < 300 then valuenum else null end) as SysBP_min
+    , max(case when itemid in (455,220179) and valuenum > 0 and valuenum < 300 then valuenum else null end) as SysBP_max
+    , round(cast(avg(case when itemid in (455,220179) and valuenum > 0 and valuenum < 300 then valuenum else null end) as numeric)) as SysBP_mean
+    , min(case when itemid in (8441,220180) and valuenum > 0 and valuenum < 200 then valuenum else null end) as DiasBP_min
+    , max(case when itemid in (8441,220180) and valuenum > 0 and valuenum < 200 then valuenum else null end) as DiasBP_max
+    , round(cast(avg(case when itemid in (8441,220180) and valuenum > 0 and valuenum < 200 then valuenum else null end) as numeric)) as DiasBP_mean
+    , round(cast(min(case when itemid in (223761,678,679) and valuenum > 70 and valuenum < 120 then (valuenum-32)/1.8
+               when itemid in (223762,676,677)  and valuenum > 10 and valuenum < 50 then valuenum else null end)as numeric), 1) as temp_min
+    , round(cast(max(case when itemid in (223761,678,679) and valuenum > 70 and valuenum < 120 then (valuenum-32)/1.8
+               when itemid in (223762,676,677)  and valuenum > 10 and valuenum < 50 then valuenum else null end)as numeric), 1)as temp_max
+    ,round(cast(avg(case when itemid in (223761,678,679) and valuenum > 70 and valuenum < 120 then (valuenum-32)/1.8
+               when itemid in (223762,676,677)  and valuenum > 10 and valuenum < 50 then valuenum else null end) as numeric), 1) as temp_mean
+
+		,round(cast(avg(case when itemid in (646,220277) and valuenum > 10 and valuenum < 100 then valuenum else null end) as numeric)) as sp02
+		
+    from chartevents
+    where icustay_id is not null
+    and hadm_id is not null
+		and valuenum !=0
+		group by 1
+
+
+
+####lab all patients incl. icu patients ####
+
+###magneisium
+
+select distinct se.hadm_id, round(cast(avg(le.valuenum)as numeric),1) as magnesium
+	from services se 
+	inner join labevents le on le.subject_id=se.subject_id
+	where le.itemid=50960
+	group by 1 
+
+### calcisum  50224 hits#######
+select distinct se.hadm_id, round(cast(avg(le.valuenum)as numeric),1) as calcium
+	from services se 
+	inner join labevents le on le.subject_id=se.subject_id
+	where le.itemid=50893 
+	group by 1
+
+
+#### sodium 53537 hits####
+
+  select distinct se.hadm_id, round(avg(le.valuenum))as sodium
+ from services se 
+	inner join labevents le on le.subject_id=se.subject_id
+	where le.itemid=50983 and valuenum >34 and valuenum <190
+	group by 1
+	order by hadm_id
+
+
+####urea 51618 hits#######
+
+
+	select distinct se.hadm_id, round(cast(avg(le.valuenum)as numeric),1) as urea
+	from services se 
+	inner join labevents le on le.subject_id=se.subject_id
+	where le.itemid=51006
+	group by 1
+
+##########albumin 39467  hits#####
+
+
+	select distinct se.hadm_id, round(cast(avg(le.valuenum)as numeric),1)as albumin
+	from services se 
+	inner join labevents le on le.subject_id=se.subject_id
+	where le.itemid=50862
+	group by 1
+
+#### WBC   56599 hits###
+
+
+select  distinct icu.hadm_id, round(cast(avg(la.valuenum)as numeric),1) as WBC from icustays icu
+inner join labevents la on la.subject_id=icu.subject_id
+inner join d_labitems dl on dl.itemid=la.itemid
+where la.itemid=51301
+group by 1
+order by 1
+
+###hemoglobin   56561 hits ###
+
+
+select distinct icu.hadm_id, round(cast(avg(la.valuenum)as numeric),1)as hemoglobin from icustays icu
+inner join labevents la on la.subject_id=icu.subject_id
+where la.itemid=51222
+group by 1 order by 1
+
+
+#### #others ####
+
+###pain   17242 hits ####
+
+
+SELECT DISTINCT hadm_id,
+max(CASE 
+		WHEN VALUE SIMILAR TO '(0-None|Unable%)' THEN 0 
+		WHEN VALUE SIMILAR TO '(1%|2%|3%|4%)' THEN 1 
+		WHEN VALUE SIMILAR TO '(5%|6%|7%)' THEN 2 
+		WHEN VALUE SIMILAR TO '(8%|9%|10%)' THEN 3  
+		 end ) as pain
+FROM chartevents 
+WHERE itemid = 1044 and value is not NULL
+group by 1
+order by hadm_id
+#########has_surg   58926 records ###
+
+select distinct hadm_id,
+	 max (case
+	when prev_service  similar to '(%SURG%)' or curr_service  similar to '(%SURG%)' then 1 else 0 end ) as has_surg
+	from services
+	group by 1 order by 1
+
+
+### ventilation duration hours  left_join icustays id table to get hadm_id  38515 records after join
+
+#https://raw.githubusercontent.com/MIT-LCP/mimic-code/1754d925ba4e96e376dc29858e8df301fcb69a20/concepts/durations/ventilation-durations.sql
+
+
+select distinct hadm_id, icustay_id
+from icustays
+order by 1,2
+
+###
+
+####GCS moderate  2193 records###
+
+####rass hyper 4830 before remove mixed###
+
+
+SELECT DISTINCT hadm_id FROM chartevents
+WHERE itemid= 228096 and hadm_id NOT IN 
+ (   
+		SELECT distinct hadm_id
+		FROM chartevents
+    WHERE itemid=228096 AND valuenum <0
+		
+	)	
+	AND icustay_id IS NOT NULL
+
+
+
+# generated around 25000 patients. modified based on this query
+
+select distinct ce.hadm_id,ad.diagnosis as admission_diagnosis, di.icd9_code as discharge_icd_code, dd.short_title as discharge_diagnosis_short, dd.long_title as discharge_diagnosis_long
+From chartevents ce
+inner join diagnoses_icd di on ce.hadm_id=di.hadm_id
+inner join d_icd_diagnoses dd on dd.icd9_code=di.icd9_code
+inner join admissions ad on ad.hadm_id=ce.hadm_id 
+where di.seq_num=1 
+and  ce.value similar to 'Positive'
+and  ce.icustay_id is not null;
+and  ce.itemid =228332
+
+
+
+
+
+
