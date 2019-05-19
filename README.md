@@ -22,7 +22,7 @@ There were 45,559 subjects selected for analysis, out of which 3154 subjects wer
 
 ### Conclusion
  
-The study demonstrates that machine learning could provide an excellent opportunity for predicting delirium in ICU units from electronic health records.  Further prospective studies are highly rec
+The study demonstrates that machine learning could provide an excellent opportunity for predicting delirium in ICU units from electronic health records.  Further prospective studies are highly recommended.
  
 ### Keywords
  
