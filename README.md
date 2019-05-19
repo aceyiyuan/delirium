@@ -10,7 +10,7 @@ Delirium is a severe health condition that features sudden changes in the level 
  
 ### Objective
  
-The objective of this thesis is to examine the possibility of combining machine learning and electronic health record data to discover the most critical factors that may trigger delirium. The subsequent objective is to bring new findings to the public as a compliment to the current assessment tools.
+The objective of this project is to examine the possibility of combining machine learning and electronic health record data to discover the most critical factors that may trigger delirium. The subsequent objective is to bring new findings to the public as a compliment to the current assessment tools.
 
 ### Methods
  
