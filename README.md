@@ -28,3 +28,7 @@ This study found that among the twenty-six variables selected for inclusion, dia
 ### Keywords
  
 delirium, machine learning, predict, ICU, EHR, MIMIC
+
+### Full text 
+
+[Full text](https://drive.google.com/file/d/1dZDxb0V8wkkkvMB6_YCJAi273aW6TkEY/view?usp=sharing)  
